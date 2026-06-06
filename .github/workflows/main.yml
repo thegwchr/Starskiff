@@ -34,12 +34,12 @@ jobs:
         git fetch --prune --unshallow --tags
         GIT_SHA="$(git rev-parse --short HEAD)"
         CUR_TAG="$(git tag -l | grep -i 'alpha' | tail -1)"
-        eval $(grep -m 1 "MARKETING_VERSION =" HeliPort.xcodeproj/project.pbxproj | tr -d ';' | tr -d '\t' | tr -d " ")
+        eval $(grep -m 1 "MARKETING_VERSION =" Starskiff.xcodeproj/project.pbxproj | tr -d ';' | tr -d '\t' | tr -d " ")
 
         if [[ "$GITHUB_EVENT_NAME" != 'workflow_dispatch' ]]; then
-          sed -i '' -e "s/CURRENT_PROJECT_VERSION =.*/CURRENT_PROJECT_VERSION = \"\$(MARKETING_VERSION)-alpha-${GIT_SHA}\";/g" HeliPort.xcodeproj/project.pbxproj
+          sed -i '' -e "s/CURRENT_PROJECT_VERSION =.*/CURRENT_PROJECT_VERSION = \"\$(MARKETING_VERSION)-alpha-${GIT_SHA}\";/g" Starskiff.xcodeproj/project.pbxproj
         else
-          sed -i '' -e "s/CURRENT_PROJECT_VERSION =.*/CURRENT_PROJECT_VERSION = \"\$(MARKETING_VERSION)-stable-${GIT_SHA}\";/g" HeliPort.xcodeproj/project.pbxproj
+          sed -i '' -e "s/CURRENT_PROJECT_VERSION =.*/CURRENT_PROJECT_VERSION = \"\$(MARKETING_VERSION)-stable-${GIT_SHA}\";/g" Starskiff.xcodeproj/project.pbxproj
         fi
 
         echo "VER=$MARKETING_VERSION" >> $GITHUB_ENV
@@ -95,7 +95,7 @@ jobs:
                 f.write('\n'.join(summary) + '\n')
 
         try:
-            write_stats("HeliPort/Appearance/Localizable.xcstrings")
+            write_stats("Starskiff/Appearance/Localizable.xcstrings")
         except Exception as e:
             print(f"::error::{str(e)}")
             sys.exit(1)
@@ -105,11 +105,11 @@ jobs:
     - name: Debug Build
       if: github.event_name != 'workflow_dispatch'
       run: |
-        set -o pipefail && xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO -scheme HeliPort -configuration Debug -derivedDataPath build -disableAutomaticPackageResolution CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcbeautify --renderer terminal
+        set -o pipefail && xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO -scheme Starskiff -configuration Debug -derivedDataPath build -disableAutomaticPackageResolution CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcbeautify --renderer terminal
 
     - name: Release Build
       run: |
-        set -o pipefail && xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO -scheme HeliPort -configuration Release -derivedDataPath build -disableAutomaticPackageResolution CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcbeautify
+        set -o pipefail && xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO -scheme Starskiff -configuration Release -derivedDataPath build -disableAutomaticPackageResolution CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcbeautify
 
     - name: Create Disk Image
       if: (github.event_name == 'push' && github.ref_name == 'master') || github.event_name == 'workflow_dispatch'
@@ -117,10 +117,10 @@ jobs:
         XCBUILD_PATH="build/Build/Products/Release"
         cp LICENSE $XCBUILD_PATH
         cd $XCBUILD_PATH
-        curl -sLO https://openintelwireless.github.io/HeliPort/dmg/VolumeIcon.icns
-        curl -sLO https://openintelwireless.github.io/HeliPort/dmg/dmg-background.tiff
+        curl -sLO https://openintelwireless.github.io/Starskiff/dmg/VolumeIcon.icns
+        curl -sLO https://openintelwireless.github.io/Starskiff/dmg/dmg-background.tiff
         create-dmg \
-          --volname "HeliPort" \
+          --volname "Starskiff" \
           --volicon "VolumeIcon.icns" \
           --background "dmg-background.tiff" \
           --window-pos 200 120 \
@@ -128,11 +128,11 @@ jobs:
           --text-size 12 \
           --eula "LICENSE" \
           --icon-size 160 \
-          --icon "HeliPort.app" 180 170 \
-          --hide-extension "HeliPort.app" \
+          --icon "Starskiff.app" 180 170 \
+          --hide-extension "Starskiff.app" \
           --app-drop-link 480 170 \
-          "HeliPort.dmg" \
-          "./HeliPort.app"
+          "Starskiff.dmg" \
+          "./Starskiff.app"
         cd -
         mkdir Artifacts
         cp -R ${XCBUILD_PATH}/*.dmg Artifacts
@@ -146,7 +146,7 @@ jobs:
         echo '### Disclaimer:' >> ReleaseNotes.md
         echo '***This alpha version is for testing only.***' >> ReleaseNotes.md
         echo 'It is not ready for daily use and we do not guarantee its usability.' >> ReleaseNotes.md
-        echo 'If you discovered an issue and you do not have debugging skills, please check with the [Gitter Chat Room](https://gitter.im/OpenIntelWireless/itlwm) in advance before opening an Issue.' >> ReleaseNotes.md
+        echo 'If you discovered an issue and you do not have debugging skills, please check with the [Gitter Chat Room](https://gitter.im/thegwchr/itlwm) in advance before opening an Issue.' >> ReleaseNotes.md
 
     - name: Setup Release Variables
       if: github.event_name == 'workflow_dispatch'
@@ -170,7 +170,7 @@ jobs:
     - name: Generate Sparkle Appcast
       if: github.event_name == 'workflow_dispatch'
       run: |
-        REPO_COMMIT_URL='https://github.com/OpenIntelWireless/HeliPort/commit/'
+        REPO_COMMIT_URL='https://github.com/thegwchr/Starskiff/commit/'
         INDENT='                    '
         PART1="${INDENT}<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"${REPO_COMMIT_URL}"
         PART2="/hovercard\" href=\"${REPO_COMMIT_URL}"
@@ -185,7 +185,7 @@ jobs:
             '<?xml version="1.0" standalone="yes"?>'
             '<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">'
             '    <channel>'
-            '        <title>HeliPort</title>'
+            '        <title>Starskiff</title>'
             '        <item>'
             "            <title>${VER}</title>"
             "            <pubDate>${PUBDATE}</pubDate>"
@@ -196,7 +196,7 @@ jobs:
             '            ]]>'
             '            </description>'
             '            <sparkle:minimumSystemVersion>10.12</sparkle:minimumSystemVersion>'
-            "            <enclosure url=\"https://github.com/OpenIntelWireless/HeliPort/releases/latest/download/HeliPort.dmg\" sparkle:version=\"${VER}-stable-${SHORT_SHA}\" sparkle:shortVersionString=\"${VER}\" type=\"application/octet-stream\" $($SPARKLE_BIN/sign_update -s ${SPARKLE_KEY} ./Artifacts/HeliPort.dmg)/>"
+            "            <enclosure url=\"https://github.com/thegwchr/Starskiff/releases/latest/download/Starskiff.dmg\" sparkle:version=\"${VER}-stable-${SHORT_SHA}\" sparkle:shortVersionString=\"${VER}\" type=\"application/octet-stream\" $($SPARKLE_BIN/sign_update -s ${SPARKLE_KEY} ./Artifacts/Starskiff.dmg)/>"
             '        </item>'
             '    </channel>'
             '</rss>'
