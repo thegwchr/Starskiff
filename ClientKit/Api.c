@@ -273,6 +273,45 @@ bool get_platform_info(platform_info_t *info)
     return true;
 }
 
+bool get_hardware_info(hardware_info_t *info)
+{
+    if (!info)
+        return false;
+
+    memset(info, 0, sizeof(*info));
+
+    io_connect_t con;
+    if (!open_adapter(&con))
+        return false;
+
+    rtw88_state_result_t state;
+    kern_return_t ret = rtw88_get_state_with_connection(con, &state);
+    close_adapter(con);
+    if (ret != KERN_SUCCESS)
+        return false;
+
+    char bsd[32] = {};
+    if (!find_bsd_name(bsd, sizeof(bsd)))
+        strlcpy(bsd, "rtw88", sizeof(bsd));
+
+    strlcpy(info->interface_name, bsd, sizeof(info->interface_name));
+    strlcpy(info->chip_name,
+            state.chip_name[0] ? state.chip_name : "rtw88",
+            sizeof(info->chip_name));
+    strlcpy(info->ssid, state.ssid, sizeof(info->ssid));
+    memcpy(info->mac_addr, state.mac_addr, sizeof(info->mac_addr));
+    memcpy(info->bssid, state.bssid, sizeof(info->bssid));
+    info->fw_version = state.fw_version;
+    info->fw_sub_version = state.fw_sub_version;
+    info->state = state.state;
+    info->rssi = state.rssi;
+    info->channel = state.channel;
+    info->rx_byte_count = state.rx_byte_count;
+    info->tx_byte_count = state.tx_byte_count;
+    info->power_on = 1;
+    return true;
+}
+
 bool get_power_state(bool *enabled)
 {
     if (!enabled)

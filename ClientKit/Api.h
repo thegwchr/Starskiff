@@ -32,6 +32,22 @@ typedef struct {
 } platform_info_t;
 
 typedef struct {
+    char interface_name[32];
+    char chip_name[32];
+    char ssid[33];
+    uint8_t mac_addr[6];
+    uint8_t bssid[6];
+    uint16_t fw_version;
+    uint8_t fw_sub_version;
+    uint32_t state;
+    int32_t rssi;
+    uint32_t channel;
+    uint32_t rx_byte_count;
+    uint32_t tx_byte_count;
+    uint8_t power_on;
+} hardware_info_t;
+
+typedef struct {
     int count;
     struct ioctl_network_info networks[MAX_NETWORK_LIST_LENGTH];
 } network_info_list_t;
@@ -51,6 +67,8 @@ kern_return_t _ioctl(int ctl, bool is_get, void *data, size_t data_len);
 kern_return_t _nake_ioctl(io_connect_t con, int *ctl, bool is_get, void *data, size_t data_len);
 
 bool get_platform_info(platform_info_t *result);
+
+bool get_hardware_info(hardware_info_t *result);
 
 bool get_power_state(bool *enabled);
 
