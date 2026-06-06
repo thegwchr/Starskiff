@@ -17,6 +17,13 @@ import Foundation
 import SystemConfiguration
 
 final class NetworkManager {
+    private static let defaultNetworkSort: (NetworkInfo, NetworkInfo) -> Bool = {
+        if $0.rssi == $1.rssi {
+            return $0.ssid.localizedCaseInsensitiveCompare($1.ssid) == .orderedAscending
+        }
+        return $0.rssi > $1.rssi
+    }
+
     static let supportedSecurityMode = [
         ITL80211_SECURITY_NONE,
         ITL80211_SECURITY_WEP,
@@ -78,7 +85,7 @@ final class NetworkManager {
     }
 
     static func scanNetwork(sortBy areInIncreasingOrder: @escaping (NetworkInfo, NetworkInfo) -> Bool
-                                = { $0.ssid < $1.ssid },
+                                = NetworkManager.defaultNetworkSort,
                             callback: @escaping (_ sortedNetworkInfoList: [NetworkInfo]) -> Void) {
         scanNetwork { result in
             callback(result.sorted(by: areInIncreasingOrder))
@@ -86,7 +93,7 @@ final class NetworkManager {
     }
 
     static func scanNetwork(sortBy areInIncreasingOrder: @escaping (NetworkInfo, NetworkInfo) -> Bool
-                                = { $0.ssid < $1.ssid },
+                                = NetworkManager.defaultNetworkSort,
                             callback: @escaping (_ knownNetworks: [NetworkInfo],
                                                  _ otherNetworks: [NetworkInfo]) -> Void) {
         DispatchQueue.global(qos: .background).async {
