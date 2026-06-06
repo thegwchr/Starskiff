@@ -23,6 +23,8 @@ enum {
     RTW88_GET_RSSI   = 5,
     RTW88_SET_DEBUG  = 6,
     RTW88_GET_LOG    = 7,
+    RTW88_POWER_ON   = 8,
+    RTW88_POWER_OFF  = 9,
 };
 
 enum {
@@ -58,6 +60,7 @@ typedef struct {
     uint32_t rx_byte_count;
     uint32_t tx_byte_count;
     uint8_t  scan_offload_supported;
+    uint8_t  powered;
 } rtw88_state_result_t;
 
 static kern_return_t rtw88_call(io_connect_t con, uint32_t selector,
@@ -309,7 +312,7 @@ bool get_hardware_info(hardware_info_t *info)
     info->channel = state.channel;
     info->rx_byte_count = state.rx_byte_count;
     info->tx_byte_count = state.tx_byte_count;
-    info->power_on = 1;
+    info->power_on = state.powered ? 1 : 0;
     info->scan_offload_supported = state.scan_offload_supported;
     return true;
 }
@@ -319,11 +322,12 @@ bool get_power_state(bool *enabled)
     if (!enabled)
         return false;
 
-    io_connect_t con;
-    *enabled = open_adapter(&con);
-    if (*enabled)
-        close_adapter(con);
-    return *enabled;
+    rtw88_state_result_t state;
+    if (rtw88_get_state(&state) != KERN_SUCCESS)
+        return false;
+
+    *enabled = state.powered != 0;
+    return true;
 }
 
 bool get_80211_state(uint32_t *state)
@@ -535,12 +539,22 @@ kern_return_t get_station_info(station_info_t *info)
 
 kern_return_t power_on(void)
 {
-    return is_power_on() ? KERN_SUCCESS : KERN_FAILURE;
+    io_connect_t con;
+    if (!open_adapter(&con))
+        return KERN_FAILURE;
+    kern_return_t ret = rtw88_call(con, RTW88_POWER_ON, NULL, 0, NULL, NULL);
+    close_adapter(con);
+    return ret;
 }
 
 kern_return_t power_off(void)
 {
-    return ioctl_set(IOCTL_80211_DISASSOCIATE, NULL, 0);
+    io_connect_t con;
+    if (!open_adapter(&con))
+        return KERN_FAILURE;
+    kern_return_t ret = rtw88_call(con, RTW88_POWER_OFF, NULL, 0, NULL, NULL);
+    close_adapter(con);
+    return ret;
 }
 
 kern_return_t join_ssid(const char *ssid, const char *pwd)
@@ -599,8 +613,8 @@ kern_return_t _nake_ioctl(io_connect_t con, int *ctl, bool is_get, void *data, s
         case IOCTL_80211_POWER: {
             const struct ioctl_power *power = (const struct ioctl_power *)data;
             if (power && !power->enabled)
-                return rtw88_call(con, RTW88_DISCONNECT, NULL, 0, NULL, NULL);
-            return KERN_SUCCESS;
+                return rtw88_call(con, RTW88_POWER_OFF, NULL, 0, NULL, NULL);
+            return rtw88_call(con, RTW88_POWER_ON, NULL, 0, NULL, NULL);
         }
         default:
             return KERN_FAILURE;
@@ -634,7 +648,9 @@ kern_return_t _nake_ioctl(io_connect_t con, int *ctl, bool is_get, void *data, s
         struct ioctl_power *power = (struct ioctl_power *)data;
         memset(power, 0, sizeof(*power));
         power->version = IOCTL_VERSION;
-        power->enabled = 1;
+        if (rtw88_get_state_with_connection(con, &state) != KERN_SUCCESS)
+            return KERN_FAILURE;
+        power->enabled = state.powered ? 1 : 0;
         return KERN_SUCCESS;
     }
     case IOCTL_80211_STATE: {
