@@ -45,6 +45,7 @@ typedef struct {
     uint32_t rx_byte_count;
     uint32_t tx_byte_count;
     uint8_t power_on;
+    uint8_t scan_offload_supported;
 } hardware_info_t;
 
 typedef struct {
@@ -79,6 +80,8 @@ bool get_network_ssid(char *ssid);
 bool get_network_bssid(char *bssid);
 
 bool get_network_list(network_info_list_t *list);
+
+bool get_cached_network_list(network_info_list_t *list);
 
 bool connect_network(const char *ssid, const char *pwd);
 

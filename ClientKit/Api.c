@@ -57,6 +57,7 @@ typedef struct {
     char     chip_name[32];
     uint32_t rx_byte_count;
     uint32_t tx_byte_count;
+    uint8_t  scan_offload_supported;
 } rtw88_state_result_t;
 
 static kern_return_t rtw88_call(io_connect_t con, uint32_t selector,
@@ -309,6 +310,7 @@ bool get_hardware_info(hardware_info_t *info)
     info->rx_byte_count = state.rx_byte_count;
     info->tx_byte_count = state.tx_byte_count;
     info->power_on = 1;
+    info->scan_offload_supported = state.scan_offload_supported;
     return true;
 }
 
@@ -385,32 +387,17 @@ static void fill_security(struct ioctl_network_info *info, uint32_t cipher)
     }
 }
 
-bool get_network_list(network_info_list_t *list)
+static bool read_network_list_with_connection(io_connect_t con,
+                                              network_info_list_t *list)
 {
     if (!list)
         return false;
 
     memset(list, 0, sizeof(*list));
 
-    io_connect_t con;
-    if (!open_adapter(&con))
-        return false;
-
-    (void)rtw88_call(con, RTW88_SCAN, NULL, 0, NULL, NULL);
-
-    for (int i = 0; i < 120; i++) {
-        rtw88_state_result_t state;
-        if (rtw88_get_state_with_connection(con, &state) == KERN_SUCCESS &&
-            state.state != RTW88_STATE_SCANNING) {
-            break;
-        }
-        usleep(100000);
-    }
-
     uint8_t raw[4096] = {};
     size_t raw_len = sizeof(raw);
     kern_return_t ret = rtw88_call(con, RTW88_GET_BSS, NULL, 0, raw, &raw_len);
-    close_adapter(con);
 
     if (ret != KERN_SUCCESS || raw_len < sizeof(uint32_t))
         return false;
@@ -449,6 +436,61 @@ bool get_network_list(network_info_list_t *list)
     }
 
     return true;
+}
+
+bool get_cached_network_list(network_info_list_t *list)
+{
+    io_connect_t con;
+    if (!open_adapter(&con))
+        return false;
+
+    bool ok = read_network_list_with_connection(con, list);
+    close_adapter(con);
+    return ok;
+}
+
+bool get_network_list(network_info_list_t *list)
+{
+    if (!list)
+        return false;
+
+    memset(list, 0, sizeof(*list));
+
+    io_connect_t con;
+    if (!open_adapter(&con))
+        return false;
+
+    rtw88_state_result_t state;
+    bool can_scan = true;
+    bool wait_for_active_scan = false;
+    if (rtw88_get_state_with_connection(con, &state) == KERN_SUCCESS) {
+        bool connecting = state.state == RTW88_STATE_AUTHENTICATING ||
+                          state.state == RTW88_STATE_ASSOCIATING ||
+                          state.state == RTW88_STATE_HANDSHAKING;
+        bool connected_no_offload = state.state == RTW88_STATE_CONNECTED &&
+                                    !state.scan_offload_supported;
+        wait_for_active_scan = state.state == RTW88_STATE_SCANNING;
+        can_scan = !wait_for_active_scan && !connecting && !connected_no_offload;
+    }
+
+    if (can_scan) {
+        (void)rtw88_call(con, RTW88_SCAN, NULL, 0, NULL, NULL);
+        wait_for_active_scan = true;
+    }
+
+    if (wait_for_active_scan) {
+        for (int i = 0; i < 120; i++) {
+            if (rtw88_get_state_with_connection(con, &state) == KERN_SUCCESS &&
+                state.state != RTW88_STATE_SCANNING) {
+                break;
+            }
+            usleep(100000);
+        }
+    }
+
+    bool ok = read_network_list_with_connection(con, list);
+    close_adapter(con);
+    return ok;
 }
 
 bool connect_network(const char *ssid, const char *pwd)

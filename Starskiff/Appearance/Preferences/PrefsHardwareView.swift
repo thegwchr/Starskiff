@@ -16,6 +16,7 @@ final class PrefsHardwareView: NSView {
     private let chipValue = NSTextField(labelWithString: .unknown)
     private let firmwareValue = NSTextField(labelWithString: .unknown)
     private let macValue = NSTextField(labelWithString: .unknown)
+    private let scanOffloadValue = NSTextField(labelWithString: .unknown)
     private let stateValue = NSTextField(labelWithString: .unknown)
     private let ssidValue = NSTextField(labelWithString: .notConnected)
     private let bssidValue = NSTextField(labelWithString: .notConnected)
@@ -52,6 +53,7 @@ final class PrefsHardwareView: NSView {
         addRow(.chipset, chipValue)
         addRow(.firmware, firmwareValue)
         addRow(.macAddress, macValue)
+        addRow(.scanOffload, scanOffloadValue)
         addRow(.state, stateValue)
         addRow(.ssid, ssidValue)
         addRow(.bssid, bssidValue)
@@ -94,6 +96,8 @@ final class PrefsHardwareView: NSView {
         chipValue.stringValue = nonEmpty(String(cCharArray: info.chip_name))
         firmwareValue.stringValue = "\(info.fw_version).\(info.fw_sub_version)"
         macValue.stringValue = formatAddress(info.mac_addr)
+        scanOffloadValue.stringValue = info.scan_offload_supported != 0 ?
+            .yes : .no
         stateValue.stringValue = stateDescription(info.state)
 
         let ssid = String(cCharArray: info.ssid)
@@ -105,7 +109,7 @@ final class PrefsHardwareView: NSView {
     }
 
     private func setUnavailable() {
-        [interfaceValue, chipValue, firmwareValue, macValue, stateValue, ssidValue,
+        [interfaceValue, chipValue, firmwareValue, macValue, scanOffloadValue, stateValue, ssidValue,
          bssidValue, channelValue, rssiValue, trafficValue].forEach {
             $0.stringValue = .unavailable
         }
@@ -147,6 +151,7 @@ private extension String {
     static let chipset = NSLocalizedString("Chipset:")
     static let firmware = NSLocalizedString("Firmware:")
     static let macAddress = NSLocalizedString("MAC Address:")
+    static let scanOffload = NSLocalizedString("Scan Offload:")
     static let state = NSLocalizedString("State:")
     static let ssid = NSLocalizedString("SSID:")
     static let bssid = NSLocalizedString("BSSID:")
@@ -156,4 +161,6 @@ private extension String {
     static let unknown = NSLocalizedString("Unknown")
     static let unavailable = NSLocalizedString("Unavailable")
     static let notConnected = NSLocalizedString("Not connected")
+    static let yes = NSLocalizedString("Yes")
+    static let no = NSLocalizedString("No")
 }
