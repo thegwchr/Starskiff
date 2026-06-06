@@ -3,7 +3,7 @@
 //  Starskiff
 //
 //  Created by Erik Bautista on 8/1/20.
-//  Copyright © 2020 Feixiao. All rights reserved.
+//  Copyright © 2020 OpenIntelWireless & thegwchr. All rights reserved.
 //
 
 /*
@@ -47,6 +47,7 @@ class PrefsWindow: NSWindow {
         toolbar!.displayMode = .iconAndLabel
         toolbar!.insertItem(withItemIdentifier: .general, at: 0)
         toolbar!.insertItem(withItemIdentifier: .networks, at: 1)
+        toolbar!.insertItem(withItemIdentifier: .hardware, at: 2)
         toolbar!.selectedItemIdentifier = .general
 
         if #available(OSX 11.0, *) {
@@ -85,6 +86,9 @@ class PrefsWindow: NSWindow {
         case .networks:
             newView = PrefsSavedNetworksView()
             size = NSSize(width: 620, height: 420)
+        case .hardware:
+            newView = PrefsHardwareView()
+            size = NSSize(width: 520, height: 360)
         case .general:
             newView = PrefsGeneralView()
             size = newView!.fittingSize
@@ -106,15 +110,15 @@ class PrefsWindow: NSWindow {
 extension PrefsWindow: NSToolbarDelegate {
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.general, .networks]
+        return [.general, .networks, .hardware]
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.general, .networks]
+        return [.general, .networks, .hardware]
     }
 
     func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        return [.general, .networks]
+        return [.general, .networks, .hardware]
     }
 
     func toolbar(_ toolbar: NSToolbar,
@@ -133,6 +137,16 @@ extension PrefsWindow: NSToolbarDelegate {
                 toolbarItem.image = NSImage(systemSymbolName: "wifi", accessibilityDescription: .general)
             } else {
                 toolbarItem.image = #imageLiteral(resourceName: "WiFi")
+            }
+            toolbarItem.isEnabled = true
+            return toolbarItem
+        case .hardware:
+            toolbarItem.label = .hardware
+            toolbarItem.paletteLabel = .hardware
+            if #available(OSX 11.0, *) {
+                toolbarItem.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: .hardware)
+            } else {
+                toolbarItem.image = NSImage(named: NSImage.infoName)
             }
             toolbarItem.isEnabled = true
             return toolbarItem
@@ -157,6 +171,7 @@ extension PrefsWindow: NSToolbarDelegate {
 private extension NSToolbarItem.Identifier {
     static let networks = NSToolbarItem.Identifier("WiFiNetworks")
     static let general = NSToolbarItem.Identifier("General")
+    static let hardware = NSToolbarItem.Identifier("Hardware")
     static let none = NSToolbarItem.Identifier("none")
 }
 
@@ -166,4 +181,5 @@ private extension String {
     static let networkPrefs = NSLocalizedString("Network Preferences")
     static let networks = NSLocalizedString("Networks")
     static let general = NSLocalizedString("General")
+    static let hardware = NSLocalizedString("Hardware")
 }

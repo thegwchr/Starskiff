@@ -14,6 +14,7 @@
 		138D3CCA24CE663B00793AC1 /* BugReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138D3CC924CE663B00793AC1 /* BugReporter.swift */; };
 		13AB3CA824DE47D10093D283 /* WiFiConfigWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AB3CA724DE47D10093D283 /* WiFiConfigWindow.swift */; };
 		13C20DFA24D8B6D100B1E713 /* PrefsGeneralView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C20DF924D8B6D100B1E713 /* PrefsGeneralView.swift */; };
+		13C20DFC24D8B6D100B1E713 /* PrefsHardwareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C20DFB24D8B6D100B1E713 /* PrefsHardwareView.swift */; };
 		5013B8FB2C5C8C8D002C5006 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 5013B8FA2C5C8C8D002C5006 /* Localizable.xcstrings */; };
 		5013B8FD2C5DF244002C5006 /* NSApp+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5013B8FC2C5DF244002C5006 /* NSApp+Extensions.swift */; };
 		5013B9002C5E1E00002C5006 /* StatusMenuBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5013B8FF2C5E1E00002C5006 /* StatusMenuBase.swift */; };
@@ -79,6 +80,7 @@
 		138D3CC924CE663B00793AC1 /* BugReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReporter.swift; sourceTree = "<group>"; };
 		13AB3CA724DE47D10093D283 /* WiFiConfigWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiConfigWindow.swift; sourceTree = "<group>"; };
 		13C20DF924D8B6D100B1E713 /* PrefsGeneralView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsGeneralView.swift; sourceTree = "<group>"; };
+		13C20DFB24D8B6D100B1E713 /* PrefsHardwareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsHardwareView.swift; sourceTree = "<group>"; };
 		5013B8FA2C5C8C8D002C5006 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		5013B8FC2C5DF244002C5006 /* NSApp+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSApp+Extensions.swift"; sourceTree = "<group>"; };
 		5013B8FF2C5E1E00002C5006 /* StatusMenuBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuBase.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 			children = (
 				1380C36024D54BFD00A448CF /* PrefsSavedNetworksView.swift */,
 				13C20DF924D8B6D100B1E713 /* PrefsGeneralView.swift */,
+				13C20DFB24D8B6D100B1E713 /* PrefsHardwareView.swift */,
 				1380C36424D5580200A448CF /* PrefsWindow.swift */,
 			);
 			path = Preferences;
@@ -479,6 +482,7 @@
 				5013B9022C5E1E36002C5006 /* StatusMenuLegacy.swift in Sources */,
 				138D3CC824CE635800793AC1 /* Commands.swift in Sources */,
 				13C20DFA24D8B6D100B1E713 /* PrefsGeneralView.swift in Sources */,
+				13C20DFC24D8B6D100B1E713 /* PrefsHardwareView.swift in Sources */,
 				13AB3CA824DE47D10093D283 /* WiFiConfigWindow.swift in Sources */,
 				505EC11D2C5BD89400F4E4EA /* StatusBarIconManager.swift in Sources */,
 				1380C36524D5580200A448CF /* PrefsWindow.swift in Sources */,

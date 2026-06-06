@@ -3,7 +3,7 @@
 //  Starskiff
 //
 //  Created by Erik Bautista on 8/7/20.
-//  Copyright © 2020 Feixiao. All rights reserved.
+//  Copyright © 2020 OpenIntelWireless & thegwchr. All rights reserved.
 //
 
 /*

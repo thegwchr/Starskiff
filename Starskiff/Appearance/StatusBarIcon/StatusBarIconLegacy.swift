@@ -3,7 +3,7 @@
 //  Starskiff
 //
 //  Created by Bat.bat on 25/6/2024.
-//  Copyright © 2020 Feixiao. All rights reserved.
+//  Copyright © 2020 OpenIntelWireless & thegwchr. All rights reserved.
 //
 
 /*
