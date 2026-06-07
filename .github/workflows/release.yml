@@ -16,6 +16,10 @@ on:
         required: true
         default: false
         type: boolean
+      changelog:
+        description: Change log; use \n for line breaks
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -28,13 +32,6 @@ jobs:
       - name: Checkout Starskiff
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          brew install create-dmg
-        env:
-          HOMEBREW_NO_INSTALL_CLEANUP: 1
-          HOMEBREW_NO_AUTO_UPDATE: 1
-
       - name: Manage Version
         run: |
           git fetch --prune --unshallow --tags
@@ -45,57 +42,35 @@ jobs:
 
       - name: Release Build
         run: |
-          set -o pipefail && xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO \
+          xcodebuild ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO \
             -scheme Starskiff -configuration Release -derivedDataPath build \
             -disableAutomaticPackageResolution \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcbeautify
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 
       - name: Create Disk Image
-        run: |
-          XCBUILD_PATH="build/Build/Products/Release"
-          cp LICENSE $XCBUILD_PATH
-          cd $XCBUILD_PATH
-          curl -sLO https://openintelwireless.github.io/HeliPort/dmg/VolumeIcon.icns
-          curl -sLO https://openintelwireless.github.io/HeliPort/dmg/dmg-background.tiff
-          create-dmg \
-            --volname "Starskiff" \
-            --volicon "VolumeIcon.icns" \
-            --background "dmg-background.tiff" \
-            --window-pos 200 120 \
-            --window-size 660 420 \
-            --text-size 12 \
-            --eula "LICENSE" \
-            --icon-size 160 \
-            --icon "Starskiff.app" 180 170 \
-            --hide-extension "Starskiff.app" \
-            --app-drop-link 480 170 \
-            "Starskiff.dmg" \
-            "./Starskiff.app"
-          cd -
-          mkdir -p Artifacts
-          cp -R ${XCBUILD_PATH}/*.dmg Artifacts
-
-      - name: Publish GitHub Release
         env:
           TAG: ${{ inputs.tag }}
-          TITLE: ${{ inputs.title }}
-          PRERELEASE: ${{ inputs.prerelease }}
         run: |
-          set -euo pipefail
+          chmod +x scripts/build-dmg.sh
+          DMG_NAME="Starskiff-${TAG}.dmg" scripts/build-dmg.sh
 
-          RELEASE_TITLE="${TITLE:-$TAG}"
-          NOTES="Starskiff release for ${TAG}."
-          PRE_FLAG=""
-          if [[ "$PRERELEASE" == "true" ]]; then
-            PRE_FLAG="--prerelease"
-          fi
+      - name: Prepare release notes
+        env:
+          CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          python3 << 'EOF'
+          import os
+          from pathlib import Path
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" Artifacts/* --clobber
-          else
-            gh release create "$TAG" Artifacts/* \
-              --target "$GITHUB_SHA" \
-              --title "$RELEASE_TITLE" \
-              --notes "$NOTES" \
-              $PRE_FLAG
-          fi
+          changelog = os.environ["CHANGELOG"].replace("\\n", "\n")
+          Path(os.environ["RUNNER_TEMP"], "release-notes.md").write_text(changelog + "\n")
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.title || inputs.tag }}
+          body_path: ${{ runner.temp }}/release-notes.md
+          prerelease: ${{ inputs.prerelease }}
+          files: Artifacts/*.dmg

@@ -1,16 +1,19 @@
 {
   "images" : [
     {
+      "filename" : "AppIcon_16.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "16x16"
     },
     {
+      "filename" : "AppIcon_32.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
+      "filename" : "AppIcon_32.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
@@ -52,6 +55,7 @@
       "size" : "512x512"
     },
     {
+      "filename" : "AppIcon_1024.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
