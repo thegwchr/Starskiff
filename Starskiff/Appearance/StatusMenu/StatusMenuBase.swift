@@ -57,12 +57,15 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
                 StatusBarIcon.shared().connecting()
             case ITL80211_S_RUN:
                 DispatchQueue.global(qos: .background).async {
-                    let isReachable = NetworkManager.isReachable()
                     var staInfo = station_info_t()
-                    get_station_info(&staInfo)
+                    let hasStationInfo = get_station_info(&staInfo) == KERN_SUCCESS
+                    let hasUsableIPv4 = Self.hasUsableIPv4Address()
                     DispatchQueue.main.async {
-                        guard isReachable else { StatusBarIcon.shared().warning(); return }
-                        StatusBarIcon.shared().signalStrength(rssi: staInfo.rssi)
+                        if hasStationInfo && hasUsableIPv4 {
+                            StatusBarIcon.shared().signalStrength(rssi: staInfo.rssi)
+                        } else {
+                            StatusBarIcon.shared().warning()
+                        }
                     }
                 }
             case ITL80211_S_SCAN:
@@ -297,6 +300,22 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
                 NetworkManager.scanSavedNetworks()
             }
         }
+    }
+
+    private static func hasUsableIPv4Address() -> Bool {
+        var platformInfo = platform_info_t()
+        guard get_platform_info(&platformInfo) else {
+            return false
+        }
+
+        let bsd = String(cCharArray: platformInfo.device_info_str)
+        guard let address = NetworkManager.getLocalAddress(bsd: bsd) else {
+            return false
+        }
+
+        return !address.contains(":") &&
+               address != "0.0.0.0" &&
+               !address.hasPrefix("169.254.")
     }
 
     // - MARK: Action handlers

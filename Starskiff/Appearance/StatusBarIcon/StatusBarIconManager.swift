@@ -51,30 +51,35 @@ class StatusBarIcon {
     }
 
     func on() {
-        stopTimer()
         disconnected()
     }
 
     func off() {
-        stopTimer()
-        statusBar.button?.image = icons.off
+        onMain {
+            self.stopTimer()
+            self.statusBar.button?.image = self.icons.off
+        }
     }
 
     func connected() {
-        stopTimer()
-        statusBar.button?.image = icons.connected
+        onMain {
+            self.stopTimer()
+            self.statusBar.button?.image = self.icons.connected
+        }
     }
 
     func disconnected() {
-        stopTimer()
-        statusBar.button?.image = icons.disconnected
+        onMain {
+            self.stopTimer()
+            self.statusBar.button?.image = self.icons.disconnected
+        }
     }
 
     func connecting() {
-        guard timer == nil else { return }
-        tickIndex = 0
-        tickDirection = 1
-        DispatchQueue.global(qos: .default).async {
+        onMain {
+            guard self.timer == nil else { return }
+            self.tickIndex = 0
+            self.tickDirection = 1
             self.timer = Timer.scheduledTimer(
                 timeInterval: 0.3,
                 target: self,
@@ -83,24 +88,28 @@ class StatusBarIcon {
                 repeats: true
             )
             self.timer?.fire()
-            RunLoop.current.add(self.timer!, forMode: .common)
-            RunLoop.current.run()
         }
     }
 
     func warning() {
-        stopTimer()
-        statusBar.button?.image = icons.warning
+        onMain {
+            self.stopTimer()
+            self.statusBar.button?.image = self.icons.warning
+        }
     }
 
     func error() {
-        stopTimer()
-        statusBar.button?.image = #imageLiteral(resourceName: "WiFiStateError")
+        onMain {
+            self.stopTimer()
+            self.statusBar.button?.image = #imageLiteral(resourceName: "WiFiStateError")
+        }
     }
 
     func signalStrength(rssi: Int16) {
-        stopTimer()
-        statusBar.button?.image = icons.getRssiImage(rssi)
+        onMain {
+            self.stopTimer()
+            self.statusBar.button?.image = self.icons.getRssiImage(rssi)
+        }
     }
 
     func getRssiImage(rssi: Int16) -> NSImage? {
@@ -124,5 +133,13 @@ class StatusBarIcon {
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+    }
+
+    private func onMain(_ work: @escaping () -> Void) {
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.async(execute: work)
+        }
     }
 }

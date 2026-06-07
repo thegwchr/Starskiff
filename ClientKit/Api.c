@@ -88,6 +88,8 @@ static kern_return_t rtw88_get_state(rtw88_state_result_t *state)
     return ret;
 }
 
+static bool rtw88_state_has_station(const rtw88_state_result_t *state);
+
 static kern_return_t fill_station_info_from_state(station_info_t *info,
                                                   const rtw88_state_result_t *state)
 {
@@ -96,7 +98,8 @@ static kern_return_t fill_station_info_from_state(station_info_t *info,
 
     memset(info, 0, sizeof(*info));
 
-    if (state->state != RTW88_STATE_CONNECTED)
+    if (state->state != RTW88_STATE_CONNECTED &&
+        (state->state != RTW88_STATE_SCANNING || !rtw88_state_has_station(state)))
         return KERN_FAILURE;
 
     info->version = IOCTL_VERSION;
@@ -113,10 +116,28 @@ static kern_return_t fill_station_info_from_state(station_info_t *info,
     return KERN_SUCCESS;
 }
 
-static int map_rtw88_state(uint32_t state)
+static bool rtw88_state_has_station(const rtw88_state_result_t *state)
 {
-    switch (state) {
+    if (!state || !state->ssid[0] || state->channel == 0)
+        return false;
+
+    for (size_t i = 0; i < sizeof(state->bssid); i++) {
+        if (state->bssid[i] != 0)
+            return true;
+    }
+
+    return false;
+}
+
+static int map_rtw88_state(const rtw88_state_result_t *state)
+{
+    if (!state)
+        return ITL80211_S_INIT;
+
+    switch (state->state) {
     case RTW88_STATE_SCANNING:
+        if (rtw88_state_has_station(state))
+            return ITL80211_S_RUN;
         return ITL80211_S_SCAN;
     case RTW88_STATE_AUTHENTICATING:
     case RTW88_STATE_HANDSHAKING:
@@ -339,7 +360,7 @@ bool get_80211_state(uint32_t *state)
     if (rtw88_get_state(&rtw_state) != KERN_SUCCESS)
         return false;
 
-    *state = (uint32_t)map_rtw88_state(rtw_state.state);
+    *state = (uint32_t)map_rtw88_state(&rtw_state);
     return true;
 }
 
@@ -471,10 +492,9 @@ bool get_network_list(network_info_list_t *list)
         bool connecting = state.state == RTW88_STATE_AUTHENTICATING ||
                           state.state == RTW88_STATE_ASSOCIATING ||
                           state.state == RTW88_STATE_HANDSHAKING;
-        bool connected_no_offload = state.state == RTW88_STATE_CONNECTED &&
-                                    !state.scan_offload_supported;
+        bool connected = state.state == RTW88_STATE_CONNECTED;
         wait_for_active_scan = state.state == RTW88_STATE_SCANNING;
-        can_scan = !wait_for_active_scan && !connecting && !connected_no_offload;
+        can_scan = !wait_for_active_scan && !connecting && !connected;
     }
 
     if (can_scan) {
@@ -659,7 +679,7 @@ kern_return_t _nake_ioctl(io_connect_t con, int *ctl, bool is_get, void *data, s
         struct ioctl_state *out = (struct ioctl_state *)data;
         memset(out, 0, sizeof(*out));
         out->version = IOCTL_VERSION;
-        out->state = map_rtw88_state(state.state);
+        out->state = map_rtw88_state(&state);
         return KERN_SUCCESS;
     }
     case IOCTL_80211_NW_ID: {

@@ -18,11 +18,11 @@ final class PrefsHardwareView: NSView {
     private let macValue = NSTextField(labelWithString: .unknown)
     private let scanOffloadValue = NSTextField(labelWithString: .unknown)
     private let stateValue = NSTextField(labelWithString: .unknown)
-    private let ssidValue = NSTextField(labelWithString: .notConnected)
-    private let bssidValue = NSTextField(labelWithString: .notConnected)
-    private let channelValue = NSTextField(labelWithString: .unknown)
-    private let rssiValue = NSTextField(labelWithString: .unknown)
-    private let trafficValue = NSTextField(labelWithString: .unknown)
+    private let ssidValue = NSTextField(labelWithString: .emptyValue)
+    private let bssidValue = NSTextField(labelWithString: .emptyValue)
+    private let channelValue = NSTextField(labelWithString: .emptyValue)
+    private let rssiValue = NSTextField(labelWithString: .emptyValue)
+    private let trafficValue = NSTextField(labelWithString: .emptyValue)
 
     convenience init() {
         self.init(frame: .zero)
@@ -101,11 +101,11 @@ final class PrefsHardwareView: NSView {
         stateValue.stringValue = stateDescription(info.state)
 
         let ssid = String(cCharArray: info.ssid)
-        ssidValue.stringValue = ssid.isEmpty ? .notConnected : ssid
-        bssidValue.stringValue = formatAddress(info.bssid)
-        channelValue.stringValue = info.channel == 0 ? .unknown : String(info.channel)
-        rssiValue.stringValue = info.rssi <= -100 ? .unknown : "\(info.rssi) dBm"
-        trafficValue.stringValue = "\(formatBytes(info.rx_byte_count)) down / \(formatBytes(info.tx_byte_count)) up"
+        ssidValue.stringValue = ssid.isEmpty ? .emptyValue : ssid
+        bssidValue.stringValue = formatDynamicAddress(info.bssid)
+        channelValue.stringValue = info.channel == 0 ? .emptyValue : String(info.channel)
+        rssiValue.stringValue = info.rssi == 0 || info.rssi <= -100 ? .emptyValue : "\(info.rssi) dBm"
+        trafficValue.stringValue = formatTraffic(rx: info.rx_byte_count, tx: info.tx_byte_count)
     }
 
     private func setUnavailable() {
@@ -127,6 +127,11 @@ final class PrefsHardwareView: NSView {
         return bytes.map { String(format: "%02x", $0) }.joined(separator: ":")
     }
 
+    private func formatDynamicAddress<T>(_ address: T) -> String {
+        let formatted = formatAddress(address)
+        return formatted == .unknown ? .emptyValue : formatted
+    }
+
     private func stateDescription(_ state: UInt32) -> String {
         switch state {
         case 0: return NSLocalizedString("Idle")
@@ -142,6 +147,13 @@ final class PrefsHardwareView: NSView {
 
     private func formatBytes(_ value: UInt32) -> String {
         return ByteCountFormatter.string(fromByteCount: Int64(value), countStyle: .binary)
+    }
+
+    private func formatTraffic(rx: UInt32, tx: UInt32) -> String {
+        guard rx != 0 || tx != 0 else {
+            return .emptyValue
+        }
+        return "\(formatBytes(rx)) down / \(formatBytes(tx)) up"
     }
 }
 
@@ -160,7 +172,7 @@ private extension String {
     static let traffic = NSLocalizedString("Traffic:")
     static let unknown = NSLocalizedString("Unknown")
     static let unavailable = NSLocalizedString("Unavailable")
-    static let notConnected = NSLocalizedString("Not connected")
+    static let emptyValue = "–"
     static let yes = NSLocalizedString("Yes")
     static let no = NSLocalizedString("No")
 }

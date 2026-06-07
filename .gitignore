@@ -5,6 +5,7 @@
 ## macOS
 .DS_Store
 ._*
+.derived-data
 
 ## User settings
 xcuserdata/
