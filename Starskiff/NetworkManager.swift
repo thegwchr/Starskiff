@@ -46,6 +46,7 @@ final class NetworkManager {
         let getAuthInfoCallback: (_ auth: NetworkAuth, _ savePassword: Bool) -> Void = { auth, savePassword in
             DispatchQueue.global(qos: .background).async {
                 StatusBarIcon.shared().connecting()
+                prepareForConnection(to: networkInfo.ssid)
                 let result = connect_network(networkInfo.ssid, auth.password)
                 DispatchQueue.main.async {
                     if result {
@@ -80,6 +81,34 @@ final class NetworkManager {
                 WiFiConfigWindow(windowState: .connectWiFi,
                                  networkInfo: networkInfo,
                                  getAuthInfoCallback: getAuthInfoCallback).show()
+            }
+        }
+    }
+
+    private static func prepareForConnection(to targetSSID: String) {
+        var state: UInt32 = 0
+        guard get_80211_state(&state), state == ITL80211_S_RUN.rawValue else {
+            return
+        }
+
+        var currentSSIDBuffer = [CChar](repeating: 0, count: Int(MAX_SSID_LENGTH) + 1)
+        guard get_network_ssid(&currentSSIDBuffer) else {
+            return
+        }
+
+        let currentSSID = String(cCharArray: currentSSIDBuffer)
+        guard !currentSSID.isEmpty, currentSSID != targetSSID else {
+            return
+        }
+
+        Log.debug("Disconnecting from \(currentSSID) before connecting to \(targetSSID)")
+        _ = dis_associate_ssid(currentSSID)
+
+        for _ in 0..<20 {
+            usleep(250_000)
+            var nextState: UInt32 = 0
+            if !get_80211_state(&nextState) || nextState != ITL80211_S_RUN.rawValue {
+                return
             }
         }
     }
